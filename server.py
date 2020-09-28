@@ -10,6 +10,8 @@ clients_lock = threading.Lock()
 connected = 0
 
 clients = {}
+# addr = IP and PORT, 2 VALUES
+# clients[addr] = {"lastBeat: 10:50pm, "color: 0"}
 
 def connectionLoop(sock):
    while True:
@@ -23,6 +25,15 @@ def connectionLoop(sock):
             clients[addr] = {}
             clients[addr]['lastBeat'] = datetime.now()
             clients[addr]['color'] = 0
+            
+            playerlist = {"list": []}
+            for c in clients:
+               templist = {"player":{"id":str(c)}}
+               playerlist['list'].append(templist)
+
+            plist = json.dumps(playerlist)
+            sock.sendto(bytes(plist,'utf8'), (addr[0],addr[1]))
+
             message = {"cmd": 0,"player":{"id":str(addr)}}
             m = json.dumps(message)
             for c in clients:
@@ -40,10 +51,18 @@ def cleanClients():
 
 def gameLoop(sock):
    while True:
+      # addr = IP and PORT, 2 VALUES
+      # clients[addr 1 = 0] = {"lastBeat: 10:50pm, "color: {"R": random.random(), "G": random.random(), "B": random.random()}"}
+     
+      # clients[addr 2 = 1] = {"lastBeat: 10:45pm, "color: 2"}
+      
+      # GameState = {"cmd": 1, "players": []}
+      #clients[c]['color']['R'] = 5
+
       GameState = {"cmd": 1, "players": []}
       clients_lock.acquire()
       print (clients)
-      for c in clients:
+      for c in clients: # we only have 1 user, c = 0
          player = {}
          clients[c]['color'] = {"R": random.random(), "G": random.random(), "B": random.random()}
          player['id'] = str(c)
