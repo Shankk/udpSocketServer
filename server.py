@@ -39,14 +39,21 @@ def connectionLoop(sock):
             for c in clients:
                sock.sendto(bytes(m,'utf8'), (c[0],c[1]))
 
-def cleanClients():
+def cleanClients(sock):
    while True:
       for c in list(clients.keys()):
          if (datetime.now() - clients[c]['lastBeat']).total_seconds() > 5:
+            
             print('Dropped Client: ', c)
+            dlist = {"disconnected":{"id":str(c)}}
+            dcm = json.dumps(dlist)
+            for d in clients:
+               sock.sendto(bytes(dcm,'utf8'), (d[0],d[1]))
+            
             clients_lock.acquire()
             del clients[c]
             clients_lock.release()
+
       time.sleep(1)
 
 def gameLoop(sock):
@@ -81,7 +88,7 @@ def main():
    s.bind(('', port))
    start_new_thread(gameLoop, (s,))
    start_new_thread(connectionLoop, (s,))
-   start_new_thread(cleanClients,())
+   start_new_thread(cleanClients,(s,))
    while True:
       time.sleep(1)
 
