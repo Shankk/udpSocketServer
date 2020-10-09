@@ -5,6 +5,7 @@ from _thread import *
 import threading
 from datetime import datetime
 import json
+import ast
 
 ########################
 """ GLOBALS """
@@ -30,19 +31,24 @@ def connectionLoop(sock):
     while True:
         # Listen to the next message
         data, addr = sock.recvfrom(1024)
-        data = str(data)
+        data = str(data, 'utf-8')
         print("Got this: " + data)
+    
+    
         # if addr (i.e IP,PORT) exists in clients dictionary
         if addr in clients:
             # update the heartbeat value if data dictionary has a key called 'heartbeat'
             if 'heartbeat' in data:
                 clients[addr]['lastBeat'] = datetime.now()
-            if 'position' in data:
+            if 'posData' in data: 
+                print("Got this: " + data)
+                parsed_json = json.loads(data) 
+
                 clients[addr]['pos'] = {
-                "X": 0,
-                "Y": 0,
-                "Z": 0
-            }
+                    "X": parsed_json['posData']['X'],
+                    "Y": parsed_json['posData']['Y'],
+                    "Z": parsed_json['posData']['Z']
+                }
         else:
             # if there is a key called 'connect' in data dictionary
             if 'connect' in data:
@@ -146,7 +152,7 @@ def gameLoop(sock):
         # create a game state object
         GameState = {"cmd": 1, "pktID": pktID, "players": []}
         clients_lock.acquire()
-        #      print (clients)
+        # print (clients)
         for c in clients:
             # create a player object
             player = {}
@@ -155,11 +161,6 @@ def gameLoop(sock):
                 "R": random.random(),
                 "G": random.random(),
                 "B": random.random()
-            }
-            clients[c]['pos'] = {
-                "X": 0,
-                "Y": 0,
-                "Z": 0
             }
             # fill the player details
             player['id'] = str(c)
